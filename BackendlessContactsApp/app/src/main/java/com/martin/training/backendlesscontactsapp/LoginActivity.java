@@ -12,6 +12,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.backendless.Backendless;
+import com.backendless.BackendlessUser;
+import com.backendless.async.callback.AsyncCallback;
+import com.backendless.exceptions.BackendlessFault;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -41,6 +47,30 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
+                if(etMail.getText().toString().isEmpty() || etPassword.getText().toString().isEmpty()){
+                    Toast.makeText(LoginActivity.this, "Enter all fields", Toast.LENGTH_SHORT).show();
+                } else {
+                    String email = etMail.getText().toString().trim();
+                    String password = etPassword.getText().toString().trim();
+
+                    showProgress(true);
+                    Backendless.UserService.login(email, password, new AsyncCallback<BackendlessUser>() {
+                        @Override
+                        public void handleResponse(BackendlessUser response) {
+                            Toast.makeText(LoginActivity.this, "Logged in", Toast.LENGTH_SHORT).show();
+                            showProgress(false);
+                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                            LoginActivity.this.finish();
+                        }
+
+                        @Override
+                        public void handleFault(BackendlessFault fault) {
+                            Toast.makeText(LoginActivity.this, "Error" + fault.getMessage(), Toast.LENGTH_SHORT).show();
+                            showProgress(false);
+                        }
+                    }, true);
+                }
+
             }
         });
         register.setOnClickListener(new View.OnClickListener() {
@@ -52,6 +82,27 @@ public class LoginActivity extends AppCompatActivity {
         tvReset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(etMail.getText().toString().isEmpty()){
+                    Toast.makeText(LoginActivity.this, "Enter your email address", Toast.LENGTH_SHORT).show();
+                } else{
+                    String email = etMail.getText().toString().trim();
+
+                    showProgress(true);
+
+                    Backendless.UserService.restorePassword(email, new AsyncCallback<Void>() {
+                        @Override
+                        public void handleResponse(Void response) {
+                            Toast.makeText(LoginActivity.this, "Reset Instructions are sent to email address", Toast.LENGTH_SHORT).show();
+                            showProgress(false);
+                        }
+
+                        @Override
+                        public void handleFault(BackendlessFault fault) {
+                            Toast.makeText(LoginActivity.this, "Error" + fault.getMessage(), Toast.LENGTH_SHORT).show();
+                            showProgress(false);
+                        }
+                    });
+                }
 
             }
         });
