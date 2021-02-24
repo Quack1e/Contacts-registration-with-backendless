@@ -18,6 +18,7 @@ import com.backendless.Backendless;
 import com.backendless.BackendlessUser;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.local.UserIdStorageFactory;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -54,6 +55,7 @@ public class LoginActivity extends AppCompatActivity {
                     String password = etPassword.getText().toString().trim();
 
                     showProgress(true);
+                    tvLoad.setText("Logging in, Please wait");
                     Backendless.UserService.login(email, password, new AsyncCallback<BackendlessUser>() {
                         @Override
                         public void handleResponse(BackendlessUser response) {
@@ -86,8 +88,9 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(LoginActivity.this, "Enter your email address", Toast.LENGTH_SHORT).show();
                 } else{
                     String email = etMail.getText().toString().trim();
-
+                    
                     showProgress(true);
+                    tvLoad.setText("Sending instructions.. please wait");
 
                     Backendless.UserService.restorePassword(email, new AsyncCallback<Void>() {
                         @Override
@@ -107,6 +110,41 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        showProgress(true);
+        tvLoad.setText("Checking login credentials... please wait");
+
+        Backendless.UserService.isValidLogin(new AsyncCallback<Boolean>() {
+            @Override
+            public void handleResponse(Boolean response) {
+                if(response){
+                    String userObjectId = UserIdStorageFactory.instance().getStorage().get();
+
+                    tvLoad.setText("Logging you in... please wait");
+                    Backendless.Data.of(BackendlessUser.class).findById(userObjectId, new AsyncCallback<BackendlessUser>() {
+                        @Override
+                        public void handleResponse(BackendlessUser response) {
+
+                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                            LoginActivity.this.finish();
+                        }
+
+                        @Override
+                        public void handleFault(BackendlessFault fault) {
+                            Toast.makeText(LoginActivity.this, "Error" + fault.getMessage(), Toast.LENGTH_SHORT).show();
+                            showProgress(false);
+                        }
+                    });
+                } else{
+                    showProgress(false);
+                }
+            }
+
+            @Override
+            public void handleFault(BackendlessFault fault) {
+                Toast.makeText(LoginActivity.this, "Error" + fault.getMessage(), Toast.LENGTH_SHORT).show();
+                showProgress(false);
+            }
+        });
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
